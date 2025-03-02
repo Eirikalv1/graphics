@@ -1,6 +1,10 @@
 package main
 
-import "github.com/go-gl/glfw/v3.3/glfw"
+import (
+	"github.com/go-gl/glfw/v3.3/glfw"
+
+	input "graphics/inputevents"
+)
 
 type Window struct {
 	handle *glfw.Window
@@ -25,6 +29,10 @@ func InitWindow() (window *Window, err error) {
 	if err != nil {
 		return window, err
 	}
+
+	window.handle.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		input.SetKey(key, action, mods)
+	})
 
 	return window, err
 }

@@ -54,7 +54,7 @@ func InitGpuContext(window *glfw.Window) (ctx *GpuContext, err error) {
 	width, height := window.GetSize()
 	ctx.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface_caps.Formats[0],
+		Format:      surface_caps.Formats[1],
 		Width:       uint32(width),
 		Height:      uint32(height),
 		PresentMode: wgpu.PresentMode_Fifo,

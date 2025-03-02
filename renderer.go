@@ -35,19 +35,19 @@ var vertexBufferLayout = wgpu.VertexBufferLayout{
 
 var vertexData = [...]Vertex{
 	{
-		pos:   [2]float32{-0.5, 0.5},
+		pos:   [2]float32{-1.0, 1.0},
 		color: [2]float32{0.0, 1.0},
 	},
 	{
-		pos:   [2]float32{0.5, 0.5},
+		pos:   [2]float32{1.0, 1.0},
 		color: [2]float32{1.0, 1.0},
 	},
 	{
-		pos:   [2]float32{0.5, -0.5},
+		pos:   [2]float32{1.0, -1.0},
 		color: [2]float32{1.0, 0.0},
 	},
 	{
-		pos:   [2]float32{-0.5, -0.5},
+		pos:   [2]float32{-1.0, -1.0},
 		color: [2]float32{0.0, 0.0},
 	},
 }

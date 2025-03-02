@@ -21,7 +21,7 @@ func InitWindow() (window *Window, err error) {
 	}
 
 	glfw.WindowHint(glfw.ClientAPI, glfw.NoAPI)
-	window.handle, err = glfw.CreateWindow(800, 600, "title", nil, nil)
+	window.handle, err = glfw.CreateWindow(600, 600, "title", nil, nil)
 	if err != nil {
 		return window, err
 	}

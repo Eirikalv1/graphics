@@ -32,7 +32,6 @@ func InitWindow() (window *Window, err error) {
 
 	window.handle.SetKeyCallback(input.KeyCallback)
 	window.handle.SetMouseButtonCallback(input.MouseButtonCallback)
-	window.handle.SetCursorPosCallback(input.CursorPosCallback)
 
 	return window, err
 }

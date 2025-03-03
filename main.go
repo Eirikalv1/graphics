@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"graphics/input"
 	"runtime"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -26,7 +27,9 @@ func main() {
 		ctx.Resize(width, height)
 	})
 
-	renderer, err := InitRenderer(ctx)
+	camera := InitCamera()
+
+	renderer, err := InitRenderer(ctx, camera)
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +38,10 @@ func main() {
 	for !window.handle.ShouldClose() {
 		glfw.PollEvents()
 
-		if err := renderer.Render(ctx); err != nil {
+		input.UpdateMousePosition(window.handle)
+		camera.OnUpdate(window.handle)
+
+		if err := renderer.Render(ctx, camera); err != nil {
 			fmt.Println("error occured while rendering: ", err)
 			panic(err)
 		}

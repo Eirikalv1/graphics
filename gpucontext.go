@@ -49,16 +49,16 @@ func InitGpuContext(window *glfw.Window) (ctx *GpuContext, err error) {
 	}
 	ctx.queue = ctx.device.GetQueue()
 
-	surface_caps := ctx.surface.GetCapabilities(adapter)
+	surfaceCaps := ctx.surface.GetCapabilities(adapter)
 
 	width, height := window.GetSize()
 	ctx.config = &wgpu.SwapChainDescriptor{
 		Usage:       wgpu.TextureUsage_RenderAttachment,
-		Format:      surface_caps.Formats[1],
+		Format:      surfaceCaps.Formats[1],
 		Width:       uint32(width),
 		Height:      uint32(height),
 		PresentMode: wgpu.PresentMode_Fifo,
-		AlphaMode:   surface_caps.AlphaModes[0],
+		AlphaMode:   surfaceCaps.AlphaModes[0],
 	}
 
 	ctx.swapChain, err = ctx.device.CreateSwapChain(ctx.surface, ctx.config)

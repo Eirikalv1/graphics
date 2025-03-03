@@ -44,15 +44,6 @@ func MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action gl
 	}
 }
 
-func CursorPosCallback(window *glfw.Window, xpos float64, ypos float64) {
-	globalInputManager.mutex.Lock()
-	defer globalInputManager.mutex.Unlock()
-
-	currentPos := mgl32.Vec2{float32(xpos), float32(ypos)}
-	globalInputManager.prevMousePosition = globalInputManager.mousePosition
-	globalInputManager.mousePosition = currentPos
-}
-
 func IsKeyPressed(key glfw.Key) bool {
 	globalInputManager.mutex.RLock()
 	defer globalInputManager.mutex.RUnlock()
@@ -79,4 +70,20 @@ func GetMousePosition() mgl32.Vec2 {
 	defer globalInputManager.mutex.RUnlock()
 
 	return globalInputManager.mousePosition
+}
+
+func SetCursorMode(window *glfw.Window, mode int) {
+	window.SetInputMode(glfw.CursorMode, mode)
+}
+
+func UpdateMousePosition(window *glfw.Window) {
+	xpos, ypos := window.GetCursorPos()
+	cursorPos := mgl32.Vec2{float32(xpos), float32(ypos)}
+
+	globalInputManager.mutex.Lock()
+	defer globalInputManager.mutex.Unlock()
+
+	globalInputManager.prevMousePosition = globalInputManager.mousePosition
+	globalInputManager.mousePosition = cursorPos
+
 }

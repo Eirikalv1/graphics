@@ -58,13 +58,17 @@ var indexData = [...]uint16{
 }
 
 type Renderer struct {
-	pipeline     *wgpu.RenderPipeline
-	shader       *wgpu.ShaderModule
-	vertexBuffer *wgpu.Buffer
-	indexBuffer  *wgpu.Buffer
+	pipeline              *wgpu.RenderPipeline
+	pipelineLayout        *wgpu.PipelineLayout
+	shader                *wgpu.ShaderModule
+	vertexBuffer          *wgpu.Buffer
+	indexBuffer           *wgpu.Buffer
+	cameraBuffer          *wgpu.Buffer
+	cameraBindGroup       *wgpu.BindGroup
+	cameraBindGroupLayout *wgpu.BindGroupLayout
 }
 
-func InitRenderer(ctx *GpuContext) (renderer *Renderer, err error) {
+func InitRenderer(ctx *GpuContext, camera *Camera) (renderer *Renderer, err error) {
 	defer func() {
 		if err != nil {
 			renderer.Destroy()
@@ -82,8 +86,76 @@ func InitRenderer(ctx *GpuContext) (renderer *Renderer, err error) {
 		return renderer, err
 	}
 
+	renderer.vertexBuffer, err = ctx.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+		Label:    "Vertex Buffer",
+		Contents: wgpu.ToBytes(vertexData[:]),
+		Usage:    wgpu.BufferUsage_Vertex,
+	})
+	if err != nil {
+		return renderer, err
+	}
+
+	renderer.indexBuffer, err = ctx.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
+		Label:    "Index Buffer",
+		Contents: wgpu.ToBytes(indexData[:]),
+		Usage:    wgpu.BufferUsage_Index,
+	})
+	if err != nil {
+		return renderer, err
+	}
+
+	renderer.cameraBuffer, err = ctx.device.CreateBuffer(&wgpu.BufferDescriptor{
+		Label: "Camera Buffer",
+		Size:  uint64(unsafe.Sizeof(camera.uniform)),
+		Usage: wgpu.BufferUsage_Uniform | wgpu.BufferUsage_CopyDst,
+	})
+	if err != nil {
+		return renderer, err
+	}
+
+	renderer.cameraBindGroupLayout, err = ctx.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+		Label: "Camera Bind Group Layout",
+		Entries: []wgpu.BindGroupLayoutEntry{
+			{
+				Binding:    0,
+				Visibility: wgpu.ShaderStage_Vertex | wgpu.ShaderStage_Fragment,
+				Buffer: wgpu.BufferBindingLayout{
+					Type: wgpu.BufferBindingType_Uniform,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return renderer, err
+	}
+
+	renderer.cameraBindGroup, err = ctx.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
+		Label:  "Camera Bind Group",
+		Layout: renderer.cameraBindGroupLayout,
+		Entries: []wgpu.BindGroupEntry{
+			{
+				Binding: 0,
+				Buffer:  renderer.cameraBuffer,
+				Offset:  0,
+				Size:    uint64(unsafe.Sizeof(camera.uniform)),
+			},
+		},
+	})
+	if err != nil {
+		return renderer, err
+	}
+
+	renderer.pipelineLayout, err = ctx.device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
+		Label:            "Pipeline Layout",
+		BindGroupLayouts: []*wgpu.BindGroupLayout{renderer.cameraBindGroupLayout},
+	})
+	if err != nil {
+		return renderer, err
+	}
+
 	renderer.pipeline, err = ctx.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
-		Label: "Main Render Pipeline",
+		Label:  "Main Render Pipeline",
+		Layout: renderer.pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     renderer.shader,
 			EntryPoint: "vs_main",
@@ -116,30 +188,16 @@ func InitRenderer(ctx *GpuContext) (renderer *Renderer, err error) {
 		return renderer, err
 	}
 
-	renderer.vertexBuffer, err = ctx.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
-		Label:    "Vertex Buffer",
-		Contents: wgpu.ToBytes(vertexData[:]),
-		Usage:    wgpu.BufferUsage_Vertex,
-	})
-	if err != nil {
-		return renderer, err
-	}
-
-	renderer.indexBuffer, err = ctx.device.CreateBufferInit(&wgpu.BufferInitDescriptor{
-		Label:    "Index Buffer",
-		Contents: wgpu.ToBytes(indexData[:]),
-		Usage:    wgpu.BufferUsage_Index,
-	})
-	if err != nil {
-		return renderer, err
-	}
-
 	return renderer, nil
 }
 
 func (renderer *Renderer) Destroy() {
 	if renderer.pipeline != nil {
 		renderer.pipeline.Release()
+	}
+
+	if renderer.pipelineLayout != nil {
+		renderer.pipelineLayout.Release()
 	}
 
 	if renderer.shader != nil {
@@ -153,9 +211,21 @@ func (renderer *Renderer) Destroy() {
 	if renderer.indexBuffer != nil {
 		renderer.indexBuffer.Release()
 	}
+
+	if renderer.cameraBuffer != nil {
+		renderer.cameraBuffer.Release()
+	}
+
+	if renderer.cameraBindGroup != nil {
+		renderer.cameraBindGroup.Release()
+	}
+
+	if renderer.cameraBindGroupLayout != nil {
+		renderer.cameraBindGroupLayout.Release()
+	}
 }
 
-func (renderer *Renderer) Render(ctx *GpuContext) error {
+func (renderer *Renderer) Render(ctx *GpuContext, camera *Camera) error {
 	nextTexture, err := ctx.swapChain.GetCurrentTextureView()
 	if err != nil {
 		return err
@@ -182,7 +252,11 @@ func (renderer *Renderer) Render(ctx *GpuContext) error {
 	})
 	defer renderPass.Release()
 
+	cameraData := unsafe.Slice((*byte)(unsafe.Pointer(&camera.uniform)), unsafe.Sizeof(camera.uniform))
+	ctx.queue.WriteBuffer(renderer.cameraBuffer, 0, cameraData)
+
 	renderPass.SetPipeline(renderer.pipeline)
+	renderPass.SetBindGroup(0, renderer.cameraBindGroup, nil)
 	renderPass.SetVertexBuffer(0, renderer.vertexBuffer, 0, wgpu.WholeSize)
 	renderPass.SetIndexBuffer(renderer.indexBuffer, wgpu.IndexFormat_Uint16, 0, wgpu.WholeSize)
 	renderPass.DrawIndexed(uint32(len(indexData)), 1, 0, 0, 0)

@@ -4,17 +4,19 @@ import (
 	"sync"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 type InputManager struct {
-	mutex sync.RWMutex
-	keys  map[glfw.Key]bool
-	mouseButtons map[glfw.MouseButton]bool
-	mouseX, mouseY float64
+	mutex             sync.RWMutex
+	keys              map[glfw.Key]bool
+	mouseButtons      map[glfw.MouseButton]bool
+	mousePosition     mgl32.Vec2
+	prevMousePosition mgl32.Vec2
 }
 
 var globalInputManager = &InputManager{
-	keys:	make(map[glfw.Key]bool),
+	keys:         make(map[glfw.Key]bool),
 	mouseButtons: make(map[glfw.MouseButton]bool),
 }
 
@@ -46,8 +48,9 @@ func CursorPosCallback(window *glfw.Window, xpos float64, ypos float64) {
 	globalInputManager.mutex.Lock()
 	defer globalInputManager.mutex.Unlock()
 
-	globalInputManager.mouseX = xpos
-	globalInputManager.mouseY = ypos
+	currentPos := mgl32.Vec2{float32(xpos), float32(ypos)}
+	globalInputManager.prevMousePosition = globalInputManager.mousePosition
+	globalInputManager.mousePosition = currentPos
 }
 
 func IsKeyPressed(key glfw.Key) bool {
@@ -64,9 +67,16 @@ func IsMouseButtonPressed(button glfw.MouseButton) bool {
 	return globalInputManager.mouseButtons[button]
 }
 
-func GetMousePosition() (float64, float64) {
+func GetMouseDelta() mgl32.Vec2 {
 	globalInputManager.mutex.RLock()
 	defer globalInputManager.mutex.RUnlock()
 
-	return globalInputManager.mouseX, globalInputManager.mouseY
+	return globalInputManager.mousePosition.Sub(globalInputManager.prevMousePosition)
+}
+
+func GetMousePosition() mgl32.Vec2 {
+	globalInputManager.mutex.RLock()
+	defer globalInputManager.mutex.RUnlock()
+
+	return globalInputManager.mousePosition
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 
-	input "graphics/inputevents"
+	"graphics/input"
 )
 
 type Window struct {
@@ -30,9 +30,9 @@ func InitWindow() (window *Window, err error) {
 		return window, err
 	}
 
-	window.handle.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-		input.SetKey(key, action, mods)
-	})
+	window.handle.SetKeyCallback(input.KeyCallback)
+	window.handle.SetMouseButtonCallback(input.MouseButtonCallback)
+	window.handle.SetCursorPosCallback(input.CursorPosCallback)
 
 	return window, err
 }

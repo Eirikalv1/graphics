@@ -5,8 +5,6 @@ import (
 	"runtime"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
-
-	input "graphics/inputevents"
 )
 
 func main() {
@@ -17,8 +15,6 @@ func main() {
 		panic(err)
 	}
 	defer window.Destroy()
-
-	input.InitKeyState()
 
 	ctx, err := InitGpuContext(window.handle)
 	if err != nil {

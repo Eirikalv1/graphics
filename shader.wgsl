@@ -90,7 +90,7 @@ fn per_pixel(coord: vec2<f32>) -> vec4<f32> {
     let light_intensity = max(dot(hit_normal, -light_dir), 0.0);
 
     var sphere_color = sphere.albedo;
-    //sphere_color *= light_intensity;
+    sphere_color *= light_intensity;
 
     return vec4<f32>(sphere_color, 1.0);
 }

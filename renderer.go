@@ -118,7 +118,7 @@ func InitRenderer(ctx *GpuContext, camera *Camera) (renderer *Renderer, err erro
 		Entries: []wgpu.BindGroupLayoutEntry{
 			{
 				Binding:    0,
-				Visibility: wgpu.ShaderStage_Vertex | wgpu.ShaderStage_Fragment,
+				Visibility: wgpu.ShaderStage_Fragment,
 				Buffer: wgpu.BufferBindingLayout{
 					Type: wgpu.BufferBindingType_Uniform,
 				},

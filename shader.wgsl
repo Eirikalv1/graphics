@@ -16,13 +16,6 @@ fn vs_main(model: VertexInput) -> VertexOutput {
     return out;
 }
 
-struct Camera {
-    position: vec3<f32>,
-    _padding1: f32,
-    projection_inverse: mat4x4<f32>,
-    view_inverse: mat4x4<f32>,
-}
-
 @group(0) @binding(0) var<uniform> camera: Camera;
 
 var<private> spheres: array<Sphere, 10>;
@@ -34,10 +27,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     spheres[0] = new_sphere(vec3<f32>(1.0, 0.0, 1.0), vec3<f32>(0.0), 0.5);
     spheres[1] = new_sphere(vec3<f32>(0.0, 1.0, 1.0), vec3<f32>(0.0, 0.0, -2.0), 1.0);
 
-    let ray = new_ray(coord);
-    let color = trace_ray(ray);
+    let color = per_pixel(coord);
 
     return color;
+}
+
+struct HitPayload {
+    hit_distance: f32,
+    object_index: i32,
 }
 
 struct Ray {
@@ -49,6 +46,26 @@ struct Sphere {
     albedo: vec3<f32>,
     position: vec3<f32>,
     radius: f32,
+}
+
+struct Camera {
+    position: vec3<f32>,
+    _padding1: f32,
+    projection_inverse: mat4x4<f32>,
+    view_inverse: mat4x4<f32>,
+}
+
+fn per_pixel(coord: vec2<f32>) -> vec4<f32> {
+    let ray = new_ray(coord);
+    let color = trace_ray(ray);
+    
+    return color;
+}
+
+fn closest_hit(ray: Ray, hit_distance: f32, object_index: i32)  {
+}
+
+fn miss(ray: Ray) {
 }
 
 fn new_ray(coord: vec2<f32>) -> Ray {

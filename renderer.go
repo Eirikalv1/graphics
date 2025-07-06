@@ -58,14 +58,12 @@ var indexData = [...]uint16{
 }
 
 type Renderer struct {
-	pipeline              *wgpu.RenderPipeline
-	pipelineLayout        *wgpu.PipelineLayout
-	shader                *wgpu.ShaderModule
-	vertexBuffer          *wgpu.Buffer
-	indexBuffer           *wgpu.Buffer
-	cameraBuffer          *wgpu.Buffer
-	cameraBindGroup       *wgpu.BindGroup
-	cameraBindGroupLayout *wgpu.BindGroupLayout
+	pipeline        *wgpu.RenderPipeline
+	shader          *wgpu.ShaderModule
+	vertexBuffer    *wgpu.Buffer
+	indexBuffer     *wgpu.Buffer
+	cameraBuffer    *wgpu.Buffer
+	cameraBindGroup *wgpu.BindGroup
 }
 
 func InitRenderer(ctx *GpuContext, camera *Camera) (renderer *Renderer, err error) {
@@ -113,7 +111,7 @@ func InitRenderer(ctx *GpuContext, camera *Camera) (renderer *Renderer, err erro
 		return renderer, err
 	}
 
-	renderer.cameraBindGroupLayout, err = ctx.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
+	cameraBindGroupLayout, err := ctx.device.CreateBindGroupLayout(&wgpu.BindGroupLayoutDescriptor{
 		Label: "Camera Bind Group Layout",
 		Entries: []wgpu.BindGroupLayoutEntry{
 			{
@@ -128,10 +126,11 @@ func InitRenderer(ctx *GpuContext, camera *Camera) (renderer *Renderer, err erro
 	if err != nil {
 		return renderer, err
 	}
+	defer cameraBindGroupLayout.Release()
 
 	renderer.cameraBindGroup, err = ctx.device.CreateBindGroup(&wgpu.BindGroupDescriptor{
 		Label:  "Camera Bind Group",
-		Layout: renderer.cameraBindGroupLayout,
+		Layout: cameraBindGroupLayout,
 		Entries: []wgpu.BindGroupEntry{
 			{
 				Binding: 0,
@@ -145,17 +144,18 @@ func InitRenderer(ctx *GpuContext, camera *Camera) (renderer *Renderer, err erro
 		return renderer, err
 	}
 
-	renderer.pipelineLayout, err = ctx.device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
+	pipelineLayout, err := ctx.device.CreatePipelineLayout(&wgpu.PipelineLayoutDescriptor{
 		Label:            "Pipeline Layout",
-		BindGroupLayouts: []*wgpu.BindGroupLayout{renderer.cameraBindGroupLayout},
+		BindGroupLayouts: []*wgpu.BindGroupLayout{cameraBindGroupLayout},
 	})
 	if err != nil {
 		return renderer, err
 	}
+	defer pipelineLayout.Release()
 
 	renderer.pipeline, err = ctx.device.CreateRenderPipeline(&wgpu.RenderPipelineDescriptor{
 		Label:  "Main Render Pipeline",
-		Layout: renderer.pipelineLayout,
+		Layout: pipelineLayout,
 		Vertex: wgpu.VertexState{
 			Module:     renderer.shader,
 			EntryPoint: "vs_main",
@@ -196,10 +196,6 @@ func (renderer *Renderer) Destroy() {
 		renderer.pipeline.Release()
 	}
 
-	if renderer.pipelineLayout != nil {
-		renderer.pipelineLayout.Release()
-	}
-
 	if renderer.shader != nil {
 		renderer.shader.Release()
 	}
@@ -220,9 +216,6 @@ func (renderer *Renderer) Destroy() {
 		renderer.cameraBindGroup.Release()
 	}
 
-	if renderer.cameraBindGroupLayout != nil {
-		renderer.cameraBindGroupLayout.Release()
-	}
 }
 
 func (renderer *Renderer) Render(ctx *GpuContext, camera *Camera) error {
